@@ -1,5 +1,6 @@
 import express from "express";
 import usuariosRoutes from "./routes/usuarios.js";
+import 'dotenv/config';
 
 const app = express();
 const PORT = 3000;

@@ -9,7 +9,7 @@ const PORT = 3000;
 app.use(express.json());
 
 // Rutas
-app.use("/usuarios", usuariosRoutes);
+app.use("/api/usuarios", usuariosRoutes);
 
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);

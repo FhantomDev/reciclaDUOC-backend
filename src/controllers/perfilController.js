@@ -71,23 +71,38 @@ export const obtenerPerfil = async (req, res) => {
 // Nuevo controlador para actualizar el perfil
 export const actualizarPerfil = async (req, res) => {
   try {
-    const { id } = req.usuario; // viene del token
+    const { id } = req.usuario;
     const { nombre, puntos } = req.body;
 
-    if (!nombre && puntos === undefined) {
+    // Si no hay campos, devolver error
+    if (nombre === undefined && puntos === undefined) {
       return res.status(400).json({ error: "Debes enviar al menos un campo para actualizar" });
     }
 
+    // Construir dinámicamente query
+    const campos = [];
+    const valores = [];
+
+    if (nombre !== undefined) {
+      campos.push("nombre = ?");
+      valores.push(nombre);
+    }
+
+    if (puntos !== undefined) {
+      campos.push("puntos = ?");
+      valores.push(puntos);
+    }
+
+    valores.push(id); // id para el WHERE
+
+    const sql = `UPDATE usuario SET ${campos.join(", ")} WHERE id_usuario = ?`;
+
     await turso.execute({
-      sql: `
-        UPDATE usuario
-        SET nombre = COALESCE(?, nombre),
-            puntos = COALESCE(?, puntos)
-        WHERE id_usuario = ?
-      `,
-      args: [nombre, puntos, id],
+      sql,
+      args: valores,
     });
 
+    // Obtener perfil actualizado
     const actualizado = await turso.execute({
       sql: `
         SELECT id_usuario, email, nombre, puntos
@@ -101,8 +116,10 @@ export const actualizarPerfil = async (req, res) => {
       mensaje: "Perfil actualizado correctamente",
       perfil: actualizado.rows[0],
     });
+
   } catch (error) {
     console.error("Error al actualizar perfil:", error);
     res.status(500).json({ error: "Error en el servidor" });
   }
 };
+

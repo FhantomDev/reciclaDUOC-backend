@@ -13,11 +13,11 @@ router.post("/registro", registrarUsuario);
 // POST /usuarios/login
 router.post("/login", loginUsuario);
 
-// GET /usuarios/perfil/:id
-router.get("/perfil", verificarToken, obtenerPerfil);
+// GET /usuarios/getPerfil
+router.get("/getPerfil", verificarToken, obtenerPerfil);
 
-// PUT /usuarios/perfil
-router.put("/perfil", verificarToken, actualizarPerfil);
+// PUT /usuarios/updatePerfil
+router.put("/updatePerfil", verificarToken, actualizarPerfil);
 
 
 

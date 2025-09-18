@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { registrarUsuario } from "../controllers/registroController.js";
 import { loginUsuario } from "../controllers/loginController.js";
-import { obtenerPerfil } from "../controllers/perfilController.js";
+import { obtenerPerfil, actualizarPerfil } from "../controllers/perfilController.js";
 import { verificarToken } from "../middlewares/authMiddleware.js";
 
 
@@ -15,6 +15,10 @@ router.post("/login", loginUsuario);
 
 // GET /usuarios/perfil/:id
 router.get("/perfil", verificarToken, obtenerPerfil);
+
+// PUT /usuarios/perfil
+router.put("/perfil", verificarToken, actualizarPerfil);
+
 
 
 export default router;

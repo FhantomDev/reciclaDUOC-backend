@@ -1,23 +1,23 @@
 import { Router } from "express";
 import { registrarUsuario } from "../controllers/registroController.js";
 import { loginUsuario } from "../controllers/loginController.js";
-import { obtenerPerfil, actualizarPerfil } from "../controllers/perfilController.js";
+import { getPerfil, updatePerfil } from "../controllers/perfilController.js";
 import { verificarToken } from "../middlewares/authMiddleware.js";
 
 
 const router = Router();
 
 // POST /usuarios/registro
-router.post("/registro", registrarUsuario);
+router.post("/registroUsuario", registrarUsuario);
 
 // POST /usuarios/login
-router.post("/login", loginUsuario);
+router.post("/loginUsuario", loginUsuario);
 
 // GET /usuarios/getPerfil
-router.get("/getPerfil", verificarToken, obtenerPerfil);
+router.get("/getPerfil", verificarToken, getPerfil);
 
 // PUT /usuarios/updatePerfil
-router.put("/updatePerfil", verificarToken, actualizarPerfil);
+router.put("/updatePerfil", verificarToken, updatePerfil);
 
 
 

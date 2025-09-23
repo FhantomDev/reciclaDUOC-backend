@@ -1,7 +1,7 @@
 import turso from "../models/db.js";
 
 // Controlador para obtener el perfil del usuario
-export const obtenerPerfil = async (req, res) => {
+export const getPerfil = async (req, res) => {
   try {
     const { id } = req.usuario;
 
@@ -68,34 +68,21 @@ export const obtenerPerfil = async (req, res) => {
   }
 };
 
-// Nuevo controlador para actualizar el perfil
-export const actualizarPerfil = async (req, res) => {
+// Controlador para actualizar el nombre del perfil
+export const updatePerfil = async (req, res) => {
   try {
     const { id } = req.usuario;
-    const { nombre, puntos } = req.body;
+    const { nombre } = req.body;
 
-    // Si no hay campos, devolver error
-    if (nombre === undefined && puntos === undefined) {
-      return res.status(400).json({ error: "Debes enviar al menos un campo para actualizar" });
+    // Validar que se envíe el nombre
+    if (!nombre) {
+      return res.status(400).json({ error: "El nombre es obligatorio" });
     }
 
-    // Construir dinámicamente query
-    const campos = [];
-    const valores = [];
+    // Preparar query para actualizar solo el nombre
+    const valores = [nombre, id];
 
-    if (nombre !== undefined) {
-      campos.push("nombre = ?");
-      valores.push(nombre);
-    }
-
-    if (puntos !== undefined) {
-      campos.push("puntos = ?");
-      valores.push(puntos);
-    }
-
-    valores.push(id); // id para el WHERE
-
-    const sql = `UPDATE usuario SET ${campos.join(", ")} WHERE id_usuario = ?`;
+    const sql = "UPDATE usuario SET nombre = ? WHERE id_usuario = ?";
 
     await turso.execute({
       sql,

@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 
 export const registrarUsuario = async (req, res) => {
   const { email, password, nombre } = req.body;
+  const puntos = 0
 
   if (!email || !password || !nombre) {
     return res.status(400).json({ error: "Email, password y nombre son obligatorios" });
@@ -24,8 +25,8 @@ export const registrarUsuario = async (req, res) => {
 
     // Insertar usuario
     const nuevo = await turso.execute({
-      sql: "INSERT INTO usuario (email, password, nombre) VALUES (?, ?, ?)",
-      args: [email, hashedPassword, nombre],
+      sql: "INSERT INTO usuario (email, password, nombre, puntos) VALUES (?, ?, ?, ?)",
+      args: [email, hashedPassword, nombre, puntos],
     });
 
     res.status(201).json({
@@ -33,7 +34,8 @@ export const registrarUsuario = async (req, res) => {
       usuario: {
         id: Number(nuevo.lastInsertRowid),
         email,
-        nombre
+        nombre,
+        puntos
       },
     });
   } catch (error) {

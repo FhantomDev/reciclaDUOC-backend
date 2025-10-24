@@ -38,6 +38,10 @@ export const loginUsuario = async (req, res) => {
       { expiresIn: "5h" }
     );
 
+    const decodedToken = jwt.decode(token);
+    const createdAt = new Date(decodedToken.iat * 1000).toISOString();
+    const expiresAt = new Date(decodedToken.exp * 1000).toISOString();
+
     res.status(200).json({
       mensaje: "Login exitoso",
       usuario: {
@@ -45,6 +49,8 @@ export const loginUsuario = async (req, res) => {
         email: usuario.email,
       },
       token,
+      token_creado: createdAt,
+      token_expira: expiresAt,
     });
   } catch (error) {
     console.error("Error en login:", error);

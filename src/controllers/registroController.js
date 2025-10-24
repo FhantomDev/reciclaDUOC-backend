@@ -25,8 +25,8 @@ export const registrarUsuario = async (req, res) => {
 
     // Insertar usuario
     const nuevo = await turso.execute({
-      sql: "INSERT INTO usuario (email, password, nombre, puntos) VALUES (?, ?, ?, ?)",
-      args: [email, hashedPassword, nombre, puntos],
+      sql: "INSERT INTO usuario (email, password, nombre, puntos, id_rol) VALUES (?, ?, ?, ?, ?)",
+      args: [email, hashedPassword, nombre, puntos, 2],
     });
 
     res.status(201).json({

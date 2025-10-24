@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS centro;
 DROP TABLE IF EXISTS comuna;
 DROP TABLE IF EXISTS region;
 DROP TABLE IF EXISTS material;
+DROP TABLE IF EXISTS rol;
 DROP TABLE IF EXISTS usuario;
 
 -- ==============================================
@@ -20,7 +21,14 @@ CREATE TABLE usuario (
     email VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(20) NOT NULL,
     nombre VARCHAR(50) NOT NULL,
-    puntos INTEGER
+    puntos INTEGER NOT NULL,
+    id_rol INTEGER NOT NULL,
+    FOREIGN KEY (id_rol) REFERENCES rol(id_rol)
+);
+
+CREATE TABLE rol (
+    id_rol INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre VARCHAR(20) NOT NULL
 );
 
 CREATE TABLE material (
@@ -80,11 +88,10 @@ CREATE TABLE reciclaje_material (
 -- ==============================================
 -- INSERCIÓN DE DATOS DE EJEMPLO
 -- ==============================================
-
--- Usuarios
-INSERT INTO usuario (email, nombre, puntos) VALUES
-('irvin@example.com', 'Irvin Cribillero', 320),
-('fernando@example.com', 'Fernando López', 250);
+-- Roles
+INSERT INTO rol (nombre) VALUES
+('Administrador'),
+('Usuario');
 
 -- Materiales
 INSERT INTO material (nombre, valor_punto) VALUES

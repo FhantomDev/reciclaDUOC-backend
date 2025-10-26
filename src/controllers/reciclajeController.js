@@ -3,21 +3,21 @@ import supabase from "../models/supabase.js";
 
 export const crearReciclaje = async (req, res) => {
   try {
-    const { id_deposito, productos, foto } = req.body;
+    const { id_deposito, materiales } = req.body;
     const { id: id_usuario } = req.usuario;
 
     // Validar datos requeridos
-    if (!id_deposito || !productos || !Array.isArray(productos) || productos.length === 0) {
+    if (!id_deposito || !materiales || !Array.isArray(materiales) || materiales.length === 0) {
       return res.status(400).json({
-        error: "Datos incompletos. Se requiere id_deposito y al menos un producto"
+        error: "Datos incompletos. Se requiere id_deposito y al menos un material"
       });
     }
 
-    // Validar estructura de productos
-    for (const producto of productos) {
-      if (!producto.id_producto || !producto.cantidad || producto.cantidad <= 0) {
+    // Validar estructura de materiales
+    for (const material of materiales) {
+      if (!material.id_material || !material.cantidad || material.cantidad <= 0) {
         return res.status(400).json({
-          error: "Estructura de productos inválida. Cada producto debe tener id_producto y cantidad mayor a 0"
+          error: "Estructura de materiales inválida. Cada material debe tener id_material y cantidad mayor a 0"
         });
       }
     }
@@ -28,72 +28,58 @@ export const crearReciclaje = async (req, res) => {
     // Insertar el reciclaje primero para obtener el ID
     const resultReciclaje = await turso.execute({
       sql: `
-        INSERT INTO reciclaje (id_usuario, id_deposito, fecha, foto)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO reciclaje (id_usuario, id_deposito, fecha)
+        VALUES (?, ?, ?)
         RETURNING id_reciclaje
       `,
-      args: [id_usuario, id_deposito, fecha, null] // Inicialmente sin foto
+      args: [id_usuario, id_deposito, fecha]
     });
 
     const id_reciclaje = resultReciclaje.rows[0].id_reciclaje;
 
-    // Si hay foto, subirla a Supabase
-    if (foto) {
-      try {
-        let urlFoto = null; // Declaración al inicio del bloque
-        // Decodificar el base64 y convertirlo en un buffer
-        const buffer = Buffer.from(foto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+    // Insertar materiales del reciclaje
+    for (const material of materiales) {
+      let urlFoto = null;
+      if (material.foto) {
+        try {
+          const buffer = Buffer.from(material.foto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+          const extension = material.foto.match(/data:image\/(\w+);/)[1];
+          const nombreArchivo = `reciclaje_${id_reciclaje}_${material.id_material}.${extension}`;
 
-        // Obtener la extensión del archivo desde el data URL
-        const extension = foto.match(/data:image\/(\w+);/)[1];
-        const nombreArchivo = `reciclaje_${id_reciclaje}.${extension}`;
+          const { data, error } = await supabase.storage
+            .from('reciclaDUOC_fotos')
+            .upload(nombreArchivo, buffer, {
+              contentType: `image/${extension}`,
+              upsert: true
+            });
 
-        // Subir la foto a Supabase
-        const { data, error } = await supabase.storage
-          .from('reciclaDUOC_fotos') // nombre del bucket
-          .upload(nombreArchivo, buffer, {
-            contentType: `image/${extension}`,
-            upsert: true
-          });
+          if (error) throw error;
 
-        if (error) throw error;
-
-        // Obtener la URL pública
-        const { data: { publicUrl } } = supabase.storage
-          .from('reciclaDUOC_fotos')
-          .getPublicUrl(nombreArchivo);
-
-        urlFoto = publicUrl;
-
-        // Actualizar el registro con la URL de la foto
-        await turso.execute({
-          sql: "UPDATE reciclaje SET foto = ? WHERE id_reciclaje = ?",
-          args: [urlFoto, id_reciclaje]
-        });
-      } catch (error) {
-        console.error("Error al subir la foto:", error);
-        // Continuamos con el proceso aunque falle la subida de la foto
+          const { data: { publicUrl } } = supabase.storage
+            .from('reciclaDUOC_fotos')
+            .getPublicUrl(nombreArchivo);
+          urlFoto = publicUrl;
+        } catch (error) {
+          console.error("Error al subir la foto:", error);
+        }
       }
-    }
 
-    // Insertar productos del reciclaje
-    for (const producto of productos) {
       await turso.execute({
         sql: `
-          INSERT INTO reciclaje_producto (id_reciclaje, id_producto, cantidad)
-          VALUES (?, ?, ?)
+          INSERT INTO reciclaje_material (id_reciclaje, id_material, cantidad, foto)
+          VALUES (?, ?, ?, ?)
         `,
-        args: [id_reciclaje, producto.id_producto, producto.cantidad]
+        args: [id_reciclaje, material.id_material, material.cantidad, urlFoto]
       });
     }
 
     // Calcular y actualizar puntos del usuario
     const puntosQuery = await turso.execute({
       sql: `
-        SELECT SUM(p.valor_punto * rp.cantidad) as puntos_ganados
-        FROM reciclaje_producto rp
-        JOIN producto p ON rp.id_producto = p.id_producto
-        WHERE rp.id_reciclaje = ?
+        SELECT SUM(m.valor_punto * rm.cantidad) as puntos_ganados
+        FROM reciclaje_material rm
+        JOIN material m ON rm.id_material = m.id_material
+        WHERE rm.id_reciclaje = ?
       `,
       args: [id_reciclaje]
     });
@@ -114,20 +100,19 @@ export const crearReciclaje = async (req, res) => {
     const reciclaje = {
       id_reciclaje,
       fecha,
-      foto,
-      productos: await Promise.all(productos.map(async (p) => {
-        const productoInfo = await turso.execute({
+      materiales: await Promise.all(materiales.map(async (m) => {
+        const materialInfo = await turso.execute({
           sql: `
-            SELECT nombre, descripcion, valor_punto
-            FROM producto
-            WHERE id_producto = ?
+            SELECT nombre, valor_punto
+            FROM material
+            WHERE id_material = ?
           `,
-          args: [p.id_producto]
+          args: [m.id_material]
         });
         return {
-          ...productoInfo.rows[0],
-          id_producto: p.id_producto,
-          cantidad: p.cantidad
+          ...materialInfo.rows[0],
+          id_material: m.id_material,
+          cantidad: m.cantidad
         };
       })),
       puntos_ganados: puntosGanados

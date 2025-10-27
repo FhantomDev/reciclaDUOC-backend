@@ -1,4 +1,5 @@
 import turso from "../models/db.js";
+import bcrypt from "bcrypt";
 
 // Controlador para obtener el perfil del usuario
 export const getPerfil = async (req, res) => {
@@ -106,6 +107,31 @@ export const updatePerfil = async (req, res) => {
 
   } catch (error) {
     console.error("Error al actualizar perfil:", error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+};
+
+// Controlador para actualizar la contraseña
+export const actualizarContrasena = async (req, res) => {
+  try {
+    const { id } = req.usuario;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: "La nueva contraseña es obligatoria" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await turso.execute({
+      sql: "UPDATE usuario SET password = ? WHERE id_usuario = ?",
+      args: [hashedPassword, id],
+    });
+
+    res.status(200).json({ mensaje: "Contraseña actualizada correctamente" });
+
+  } catch (error) {
+    console.error("Error al actualizar contraseña:", error);
     res.status(500).json({ error: "Error en el servidor" });
   }
 };

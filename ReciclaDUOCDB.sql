@@ -11,10 +11,20 @@ DROP TABLE IF EXISTS region;
 DROP TABLE IF EXISTS material;
 DROP TABLE IF EXISTS rol;
 DROP TABLE IF EXISTS usuario;
+DROP TABLE IF EXISTS premio;
+
 
 -- ==============================================
 -- CREACIÓN DE TABLAS
 -- ==============================================
+CREATE TABLE premio (
+    id_premio INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre VARCHAR(50) NOT NULL,
+    foto VARCHAR(200),
+    puntos_requeridos INTEGER NOT NULL
+    stock INTEGER NOT NULL
+);
+
 
 CREATE TABLE usuario (
     id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,6 +34,15 @@ CREATE TABLE usuario (
     puntos INTEGER NOT NULL,
     id_rol INTEGER NOT NULL,
     FOREIGN KEY (id_rol) REFERENCES rol(id_rol)
+);
+
+CREATE TABLE canje_premio (
+    id_canje INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_usuario INTEGER NOT NULL,
+    id_premio INTEGER NOT NULL,
+    fecha DATETIME NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
+    FOREIGN KEY (id_premio) REFERENCES premio(id_premio)
 );
 
 CREATE TABLE rol (

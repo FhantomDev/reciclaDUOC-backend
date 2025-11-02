@@ -1,9 +1,18 @@
 import turso from "../models/db.js";
 import supabase from "../models/supabase.js";
+import sharp from 'sharp';
 
 export const crearReciclaje = async (req, res) => {
   try {
-    const { id_deposito, materiales } = req.body;
+    const id_deposito = req.body.id_deposito;
+    let materiales;
+    try {
+      materiales = JSON.parse(req.body.materiales);
+    } catch (e) {
+      return res.status(400).json({
+        error: "El campo materiales debe ser un JSON válido"
+      });
+    }
     const { id: id_usuario } = req.usuario;
 
     // Validar datos requeridos
@@ -40,16 +49,35 @@ export const crearReciclaje = async (req, res) => {
     // Insertar materiales del reciclaje
     for (const material of materiales) {
       let urlFoto = null;
-      if (material.foto) {
+      if (req.files && req.files[`foto_${material.id_material}`]) {
         try {
-          const buffer = Buffer.from(material.foto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-          const extension = material.foto.match(/data:image\/(\w+);/)[1];
+          const foto = req.files[`foto_${material.id_material}`][0];
+          const extension = foto.mimetype.split('/')[1];
           const nombreArchivo = `reciclaje_${id_reciclaje}_${material.id_material}.${extension}`;
+
+          // Crear la marca de agua con el texto
+          const marcaDeAgua = `ID Reciclaje: ${id_reciclaje}\nUsuario: ${id_usuario}`;
+
+          // Procesar la imagen con sharp
+          const imagenProcesada = await sharp(foto.buffer)
+            .composite([{
+              input: {
+                text: {
+                  text: marcaDeAgua,
+                  font: 'Arial',
+                  fontSize: 24,
+                  rgba: true
+                }
+              },
+              gravity: 'southeast', // Posición inferior derecha
+              blend: 'over'
+            }])
+            .toBuffer();
 
           const { data, error } = await supabase.storage
             .from('reciclaDUOC_fotos')
-            .upload(nombreArchivo, buffer, {
-              contentType: `image/${extension}`,
+            .upload(nombreArchivo, imagenProcesada, {
+              contentType: foto.mimetype,
               upsert: true
             });
 

@@ -1,6 +1,7 @@
 import express from "express";
 import usuariosRoutes from "./routes/usuarios.js";
 import reciclajeRoutes from "./routes/reciclaje.js";
+import materialRoutes from "./routes/material.js";
 import 'dotenv/config';
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.urlencoded({
 // Rutas
 app.use("/api/usuario", usuariosRoutes);
 app.use("/api/reciclaje", reciclajeRoutes);
+app.use("/api/material", materialRoutes);
 
 
 app.listen(PORT, () => {
